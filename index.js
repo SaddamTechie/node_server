@@ -1,28 +1,43 @@
-const http = require('http');
-const fs = require('fs');
-const PORT = 8000;
+const path = require("node:path");
+const express = require('express');
+const PORT = process.env.PORT
+const authorRouter = require('./routes/authorRoutes')
+const bookRoute = require('./routes/bookRouter')
 
-const server = http.createServer((req,res)=>{
-    const filePath = req.url ==='/'?'index.html':`${req.url.replace('/','')}.html`
+const app = express()
 
-    fs.readFile(filePath,(err,content)=>{
-        if(err){
-            fs.readFile('404.html',(err,errContent)=>{
-                if(err){
-                    res.end('<h3>404</h3>')
-                }else{
-                    res.writeHead(404,{'Content-Type':'text/html'})
-                    res.end(errContent)
-                }
-            }) 
-        }else{
-            res.writeHead(200,{'Content-Type':'text/html'})
-            res.end(content)
-        }
-    })
-})
+app.set("views", path.join(__dirname, "views"));
+app.set("view engine", "ejs");
 
 
-server.listen(PORT,()=>{
-    console.log(`Server running on Port ${PORT}`)
+app.use(express.json());
+
+
+app.use('/authors',authorRouter)
+
+app.use('/books',bookRoute)
+
+const assetsPath = path.join(__dirname, "public");
+app.use(express.static(assetsPath));
+
+
+const links = [
+    { href: "/", text: "Home" },
+    { href: "about", text: "About" },
+  ];
+  
+  const users = ["Rose", "Cake", "Biff"];
+
+app.get("/", (req, res) => {
+    res.render("index", { links:links,users:users});
+  });
+// Every thrown error in the application or the previous middleware function calling `next` with an error as an argument will eventually go to this middleware function
+app.use((err, req, res, next) => {
+    console.error(err);
+    res.status(500).send(err);
+  });
+  
+
+app.listen(PORT,()=>{
+    console.log(`Server running on port ${PORT}`)
 })
